@@ -3,6 +3,7 @@
 #include <jansson.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 
 #define UI_FILE "design.glade"
 #define MAX_LINE_LENGTH 256
@@ -18,6 +19,11 @@ GPtrArray* services;
 
 GtkLabel* unit_label;
 GtkLabel* unit_description;
+
+GtkButton* enable_btn;
+GtkButton* disable_btn;
+GtkButton* start_btn;
+GtkButton* stop_btn;
 
 static gboolean filter_func(GtkTreeModel* model, GtkTreeIter* iter, gpointer data) {
     const gchar* text = gtk_entry_get_text(filterEntry);
@@ -175,7 +181,14 @@ GPtrArray* get_services() {
     return array;
 }
 
-void on_row_activated(GtkTreeView* self, GtkTreePath* path, GtkTreeViewColumn* column, gpointer user_data) {
+void free_services() {
+    for (int i = 0; i < services->len; i++) {
+        free(services->pdata[i]);
+    }
+    g_ptr_array_free(services, true);
+}
+
+void get_selected_service(struct Service** service) {
     GtkTreeSelection* selection = gtk_tree_view_get_selection(treeView);
     GtkTreeModel* model = gtk_tree_view_get_model(treeView);
 
@@ -199,15 +212,10 @@ void on_row_activated(GtkTreeView* self, GtkTreePath* path, GtkTreeViewColumn* c
 
     gtk_tree_model_get(model, &iter, 0, &load, 1, &active, 2, &sub, 3, &unit, -1);
 
-    gtk_label_set_text(unit_label, unit);
-
     int service_index = 0;
-    struct Service* service;
     do {
-        service = services->pdata[service_index++];
-    } while (strcmp(service->unit, unit) != 0 && service_index < services->len);
-
-    gtk_label_set_text(unit_description, service->description);
+        *service = services->pdata[service_index++];
+    } while (strcmp((*service)->unit, unit) != 0 && service_index < services->len);
 
     g_free(load);
     g_free(active);
@@ -215,6 +223,143 @@ void on_row_activated(GtkTreeView* self, GtkTreePath* path, GtkTreeViewColumn* c
     g_free(unit);
 
     g_list_free(rows);
+}
+
+void on_row_activated(GtkTreeView* self, GtkTreePath* path, GtkTreeViewColumn* column, gpointer user_data) {
+    struct Service* service;
+    get_selected_service(&service);
+
+    gtk_label_set_text(unit_label, service->unit);
+    gtk_label_set_text(unit_description, service->description);
+
+    if (strcmp(service->load, "loaded") == 0) {
+        gtk_widget_set_sensitive(GTK_WIDGET(enable_btn), false);
+        gtk_widget_set_sensitive(GTK_WIDGET(disable_btn), true);
+    } else {
+        gtk_widget_set_sensitive(GTK_WIDGET(enable_btn), true);
+        gtk_widget_set_sensitive(GTK_WIDGET(disable_btn), false);
+    }
+
+    // TODO add more clear and detailed ifs
+    if (strcmp(service->active, "inactive") == 0 || strcmp(service->active, "deactivating") == 0 ||
+        strcmp(service->sub, "exited") == 0 || strcmp(service->sub, "dead") == 0) {
+        gtk_widget_set_sensitive(GTK_WIDGET(start_btn), true);
+        gtk_widget_set_sensitive(GTK_WIDGET(stop_btn), false);
+    } else {
+        gtk_widget_set_sensitive(GTK_WIDGET(start_btn), false);
+        gtk_widget_set_sensitive(GTK_WIDGET(stop_btn), true);
+    }
+}
+
+void update_liststore(GtkListStore* store) {
+    GtkTreeIter iter;
+    for (int i = 0; i < services->len; i++) {
+        struct Service* s = services->pdata[i];
+
+        gtk_list_store_set(store, &iter, 0, s->load, 1, s->active, 2, s->sub, 3, s->unit, -1);
+    }
+}
+
+void init_liststore(GtkListStore* store) {
+    GtkTreeIter iter;
+    for (int i = 0; i < services->len; i++) {
+        struct Service* s = services->pdata[i];
+
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, s->load, 1, s->active, 2, s->sub, 3, s->unit, -1);
+    }
+}
+
+void on_update_btn_clicked(GtkButton* button) {
+    services = get_services();
+    update_liststore(liststore);
+}
+
+void on_enable_btn_clicked(GtkButton* button) {
+    struct Service* service = NULL;
+    get_selected_service(&service);
+
+    if (!service) {
+        return;
+    }
+
+    char* command_prefix = "systemctl enable ";
+    int command_len = strlen(command_prefix) + strlen(service->unit);
+    char* command = malloc(command_len * sizeof(char) + 1);
+    strcpy(command, command_prefix);
+    strcat(command, service->unit);
+
+    printf("command: %s\n", command);
+
+    char* output;
+    executeCommand(command, &output);
+
+    free(command);
+}
+
+void on_disable_btn_clicked(GtkButton* button) {
+    struct Service* service = NULL;
+    get_selected_service(&service);
+
+    if (!service) {
+        return;
+    }
+
+    char* command_prefix = "systemctl disable ";
+    int command_len = strlen(command_prefix) + strlen(service->unit);
+    char* command = malloc(command_len * sizeof(char) + 1);
+    strcpy(command, command_prefix);
+    strcat(command, service->unit);
+
+    printf("command: %s\n", command);
+
+    char* output;
+    executeCommand(command, &output);
+
+    free(command);
+}
+
+void on_start_btn_clicked(GtkButton* button) {
+    struct Service* service = NULL;
+    get_selected_service(&service);
+
+    if (!service) {
+        return;
+    }
+
+    char* command_prefix = "systemctl start ";
+    int command_len = strlen(command_prefix) + strlen(service->unit);
+    char* command = malloc(command_len * sizeof(char) + 1);
+    strcpy(command, command_prefix);
+    strcat(command, service->unit);
+
+    printf("command: %s\n", command);
+
+    char* output;
+    executeCommand(command, &output);
+
+    free(command);
+}
+void on_stop_btn_clicked(GtkButton* button) {
+    struct Service* service = NULL;
+    get_selected_service(&service);
+
+    if (!service) {
+        return;
+    }
+
+    char* command_prefix = "systemctl stop ";
+    int command_len = strlen(command_prefix) + strlen(service->unit);
+    char* command = malloc(command_len * sizeof(char) + 1);
+    strcpy(command, command_prefix);
+    strcat(command, service->unit);
+
+    printf("command: %s\n", command);
+
+    char* output;
+    executeCommand(command, &output);
+
+    free(command);
 }
 
 int main(int argc, char* argv[]) {
@@ -240,15 +385,15 @@ int main(int argc, char* argv[]) {
     unit_label = GTK_LABEL(gtk_builder_get_object(builder, "unit_label"));
     unit_description = GTK_LABEL(gtk_builder_get_object(builder, "unit_description"));
 
+    GtkButton* update_btn = GTK_BUTTON(gtk_builder_get_object(builder, "update_btn"));
+
+    enable_btn = GTK_BUTTON(gtk_builder_get_object(builder, "enable_btn"));
+    disable_btn = GTK_BUTTON(gtk_builder_get_object(builder, "disable_btn"));
+    start_btn = GTK_BUTTON(gtk_builder_get_object(builder, "start_btn"));
+    stop_btn = GTK_BUTTON(gtk_builder_get_object(builder, "stop_btn"));
+
     services = get_services();
-
-    for (int i = 0; i < services->len; i++) {
-        struct Service* s = services->pdata[i];
-
-        GtkTreeIter iter;
-        gtk_list_store_append(liststore, &iter);
-        gtk_list_store_set(liststore, &iter, 0, s->load, 1, s->active, 2, s->sub, 3, s->unit, -1);
-    }
+    init_liststore(liststore);
 
     filter = GTK_TREE_MODEL_FILTER(gtk_tree_model_filter_new(GTK_TREE_MODEL(liststore), NULL));
     gtk_tree_model_filter_set_visible_func(filter, filter_func, (gpointer) "", NULL);
@@ -259,6 +404,23 @@ int main(int argc, char* argv[]) {
     g_signal_connect(filterEntry, "changed", G_CALLBACK(on_filter_entry_changed), NULL);
     g_signal_connect(treeView, "row-activated", G_CALLBACK(on_row_activated), NULL);
     g_signal_connect(treeView, "cursor-changed", G_CALLBACK(on_row_activated), NULL);
+
+    g_signal_connect(update_btn, "clicked", G_CALLBACK(on_update_btn_clicked), NULL);
+
+    g_signal_connect(enable_btn, "clicked", G_CALLBACK(on_enable_btn_clicked), NULL);
+    g_signal_connect(disable_btn, "clicked", G_CALLBACK(on_disable_btn_clicked), NULL);
+    g_signal_connect(start_btn, "clicked", G_CALLBACK(on_start_btn_clicked), NULL);
+    g_signal_connect(stop_btn, "clicked", G_CALLBACK(on_stop_btn_clicked), NULL);
+
+    GtkButton* buttons[4] = { enable_btn, disable_btn, start_btn, stop_btn };
+    for (int i = 0; i < 4; i++) {
+        gtk_widget_set_sensitive(GTK_WIDGET(buttons[i]), false);
+    }
+
+    g_signal_connect(enable_btn, "clicked", G_CALLBACK(on_update_btn_clicked), NULL);
+    g_signal_connect(disable_btn, "clicked", G_CALLBACK(on_update_btn_clicked), NULL);
+    g_signal_connect(start_btn, "clicked", G_CALLBACK(on_update_btn_clicked), NULL);
+    g_signal_connect(stop_btn, "clicked", G_CALLBACK(on_update_btn_clicked), NULL);
 
     gtk_widget_show_all(GTK_WIDGET(topWindow));
     gtk_main();

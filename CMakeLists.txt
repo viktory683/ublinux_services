@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.10)
 
 project(services C)
 
+set(CMAKE_CXX_STANDARD_REQUIRED 11)
+
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
 pkg_check_modules(JANSSON REQUIRED jansson)

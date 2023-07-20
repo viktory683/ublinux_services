@@ -91,6 +91,7 @@
                           <object class="GtkSearchEntry" id="filterEntry">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
+                            <property name="has-focus">True</property>
                             <property name="tooltip-text" translatable="yes">Поиск по имени сервиса</property>
                             <property name="primary-icon-name">edit-find-symbolic</property>
                             <property name="primary-icon-activatable">False</property>
@@ -104,7 +105,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkButton">
+                          <object class="GtkButton" id="update_btn">
                             <property name="label" translatable="yes">Обновить</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
@@ -134,6 +135,7 @@
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <property name="model">liststore1</property>
+                            <property name="enable-search">False</property>
                             <property name="enable-grid-lines">both</property>
                             <property name="activate-on-single-click">True</property>
                             <child internal-child="selection">
@@ -234,7 +236,6 @@
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="halign">start</property>
-                                <property name="label" translatable="yes">AGSVAGS</property>
                               </object>
                               <packing>
                                 <property name="left-attach">1</property>
@@ -246,7 +247,6 @@
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="halign">start</property>
-                                <property name="label" translatable="yes">aSNDHFHAGSFD</property>
                               </object>
                               <packing>
                                 <property name="left-attach">1</property>
@@ -267,7 +267,7 @@
                             <property name="halign">end</property>
                             <property name="spacing">8</property>
                             <child>
-                              <object class="GtkButton">
+                              <object class="GtkButton" id="enable_btn">
                                 <property name="label" translatable="yes">Добавить в автозапуск</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
@@ -280,7 +280,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton">
+                              <object class="GtkButton" id="disable_btn">
                                 <property name="label" translatable="yes">Убрать из автозапуска</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
@@ -293,7 +293,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton">
+                              <object class="GtkButton" id="start_btn">
                                 <property name="label" translatable="yes">Включить</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
@@ -306,7 +306,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton">
+                              <object class="GtkButton" id="stop_btn">
                                 <property name="label" translatable="yes">Выключить</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
