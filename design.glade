@@ -88,9 +88,10 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkSearchEntry">
+                          <object class="GtkSearchEntry" id="filterEntry">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
+                            <property name="tooltip-text" translatable="yes">Поиск по имени сервиса</property>
                             <property name="primary-icon-name">edit-find-symbolic</property>
                             <property name="primary-icon-activatable">False</property>
                             <property name="primary-icon-sensitive">False</property>
@@ -100,19 +101,6 @@
                             <property name="expand">True</property>
                             <property name="fill">True</property>
                             <property name="position">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkButton">
-                            <property name="label" translatable="yes">Поиск</property>
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="receives-default">True</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">2</property>
                           </packing>
                         </child>
                       </object>
@@ -129,7 +117,7 @@
                         <property name="vexpand">True</property>
                         <property name="shadow-type">in</property>
                         <child>
-                          <object class="GtkTreeView">
+                          <object class="GtkTreeView" id="tree_view">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <property name="model">liststore1</property>
